@@ -1,0 +1,237 @@
+<style>
+  /* --- Layout Específico deste Módulo --- */
+  .split-layout { display: grid; grid-template-columns: 280px 1fr; gap: 25px; height: 100%; max-width: 1400px; margin: 0 auto; }
+  
+  .filters-panel { background: #ffffff; border-right: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; height: fit-content; border: 1px solid #e5e7eb; }
+  .filters-header { font-weight: 700; color: #1f2937; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
+  
+  .filter-group label { font-size: 0.8rem; margin-bottom: 4px; font-weight:600; color:#4b5563; display:block; }
+  .filter-input { width: 100%; padding: 8px; font-size: 0.9rem; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; box-sizing:border-box; }
+  .filter-input-row { display: flex; gap: 8px; }
+  
+  .toggle-container { background: #f3f4f6; padding: 4px; border-radius: 6px; display: flex; }
+  .toggle-opt { flex: 1; text-align: center; padding: 6px; font-size: 0.8rem; cursor: pointer; border-radius: 4px; color: #6b7280; font-weight: 500; transition:0.2s; }
+  .toggle-opt.active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+  /* Checkbox List (Seletor de Pacientes) */
+  .checkbox-list { max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; margin-top:5px; }
+  .checkbox-item { padding: 8px 10px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+  .checkbox-item:hover { background: #e2e8f0; }
+  .checkbox-item input { width: auto; margin: 0; cursor: pointer; }
+
+  .stats-mini-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 15px; margin-top: 10px; opacity: 0.5; transition: opacity 0.3s; }
+  .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem; }
+  .stat-val { font-weight: 700; color: #1e40af; }
+
+  .chart-area { display: flex; flex-direction: column; height: 100%; }
+  .chart-container-full { flex: 1; background: #fff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 15px; min-height: 500px; }
+  
+  /* Botão Gerar local */
+  .btn-efi { background: #2563eb; color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; margin-top: 15px; }
+  .btn-efi:hover { background: #1d4ed8; }
+</style>
+
+<section id="view-eficacia" class="view-section">
+  <div class="split-layout">
+    
+    <div class="filters-panel">
+      <div class="filters-header">Parâmetros de Análise</div>
+
+      <div class="filter-group">
+        <label>Medicamento</label>
+        <select id="efi-med" class="filter-input"><option>Carregando...</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Exame Alvo</label>
+        <select id="efi-exame" class="filter-input"><option>Carregando...</option></select>
+      </div>
+
+      <hr style="border:0; border-top:1px solid #e5e7eb; margin:15px 0;">
+
+      <div class="filter-group">
+        <label>Sexo</label>
+        <select id="fil-sexo" class="filter-input" onchange="applyClientFilters()">
+          <option value="all">Todos</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Idade (Anos)</label>
+        <div class="filter-input-row">
+          <input type="number" id="fil-age-min" placeholder="Min" class="filter-input" onchange="applyClientFilters()">
+          <input type="number" id="fil-age-max" placeholder="Max" class="filter-input" onchange="applyClientFilters()">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Dose (mg)</label>
+        <div class="filter-input-row">
+          <input type="number" id="fil-dose-min" placeholder="Min" class="filter-input" onchange="applyClientFilters()">
+          <input type="number" id="fil-dose-max" placeholder="Max" class="filter-input" onchange="applyClientFilters()">
+        </div>
+      </div>
+
+      <div class="filter-group" style="margin-top:15px;">
+        <label>Modo Visual</label>
+        <div class="toggle-container">
+          <div class="toggle-opt active" id="tgl-media" onclick="setEficaciaMode('media')">Média</div>
+          <div class="toggle-opt" id="tgl-indiv" onclick="setEficaciaMode('indiv')">Individual</div>
+        </div>
+      </div>
+
+      <div class="filter-group" id="grp-pacientes" style="display:none; border-top:1px solid #e5e7eb; padding-top:10px; margin-top:10px;">
+        <label style="display:flex; justify-content:space-between; align-items:center;">
+          Seleção Pacientes
+          <span style="font-size:0.7rem; color:#2563eb; cursor:pointer;" onclick="toggleAllPatients()">Inverter/Todos</span>
+        </label>
+        <div id="list-pacientes" class="checkbox-list">
+          <div style="padding:10px; color:#64748b; font-size:0.8rem;">Carregue dados primeiro...</div>
+        </div>
+      </div>
+
+      <button class="btn-efi" onclick="loadEficaciaData()">🔄 Carregar Dados</button>
+
+      <div class="stats-mini-card" id="stats-card" style="opacity:0.5">
+        <div style="font-size:0.75rem; font-weight:bold; color:#1e40af; margin-bottom:10px; letter-spacing:0.5px;">RESUMO DA SELEÇÃO</div>
+        <div class="stat-row"><span>Pacientes (N):</span> <span class="stat-val" id="stat-n">-</span></div>
+        <div class="stat-row"><span>Exames Total:</span> <span class="stat-val" id="stat-total">-</span></div>
+        <div class="stat-row"><span>Média Global:</span> <span class="stat-val" id="stat-avg">-</span></div>
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <div class="chart-container-full" id="chart-eficacia"></div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  let rawEficaciaData = [];
+  let eficaciaMode = 'media';
+  let allPatientsSelected = true;
+
+  // Inicialização chamada pelo Dashboard
+  function initEficaciaModule(config) {
+    const c = config.core; 
+    const e = config.exames;
+    if(c) google.script.run.withSuccessHandler(l=>{
+        const s = document.getElementById('efi-med'); s.innerHTML=''; l.forEach(m=>s.innerHTML+=`<option value="${m}">${m}</option>`);
+    }).apiGetMedicamentos(c.abaFatos, c.colMed);
+    
+    if(e) google.script.run.withSuccessHandler(l=>{
+        const s = document.getElementById('efi-exame'); s.innerHTML=''; l.forEach(x=>s.innerHTML+=`<option value="${x}">${x}</option>`);
+    }).apiGetExamesList(e.aba, e.colNome);
+  }
+
+  function loadEficaciaData() {
+    const med = document.getElementById('efi-med').value;
+    const ex = document.getElementById('efi-exame').value;
+    const btn = document.querySelector('.btn-efi'); 
+    btn.innerText = "Carregando..."; btn.disabled = true;
+
+    google.script.run.withSuccessHandler(res => {
+      btn.innerText = "🔄 Carregar Dados"; btn.disabled = false;
+      if(!res.sucesso) return alert(res.erro);
+      rawEficaciaData = res.dados;
+      populatePatientList(rawEficaciaData);
+      applyClientFilters();
+    }).apiGetEficaciaData({medicamento: med, exameAlvo: ex});
+  }
+
+  function populatePatientList(data) {
+    const uniquePront = [...new Set(data.map(d => d.prontuario))].sort();
+    const listEl = document.getElementById('list-pacientes');
+    listEl.innerHTML = '';
+    uniquePront.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `<input type="checkbox" value="${p}" checked onchange="applyClientFilters()"> <span>${p}</span>`;
+      listEl.appendChild(div);
+    });
+  }
+  
+  function toggleAllPatients() {
+    const cbs = document.querySelectorAll('#list-pacientes input');
+    allPatientsSelected = !allPatientsSelected;
+    cbs.forEach(cb => cb.checked = allPatientsSelected);
+    applyClientFilters();
+  }
+
+  function applyClientFilters() {
+    if(rawEficaciaData.length === 0) return;
+    const sex = document.getElementById('fil-sexo').value;
+    const ageMin = parseFloat(document.getElementById('fil-age-min').value)||0;
+    const ageMax = parseFloat(document.getElementById('fil-age-max').value)||999;
+    const doseMin = parseFloat(document.getElementById('fil-dose-min').value)||0;
+    const doseMax = parseFloat(document.getElementById('fil-dose-max').value)||99999;
+    const selectedPatients = Array.from(document.querySelectorAll('#list-pacientes input:checked')).map(cb => cb.value);
+    const hasPatientFilter = selectedPatients.length > 0;
+
+    const filtered = rawEficaciaData.filter(d => {
+      if(sex!=='all' && d.sexo!==sex) return false;
+      if(d.idade < ageMin || d.idade > ageMax) return false;
+      if(d.dose !== undefined && (d.dose < doseMin || d.dose > doseMax)) return false;
+      if(eficaciaMode === 'indiv' && hasPatientFilter && !selectedPatients.includes(d.prontuario)) return false;
+      return true;
+    });
+    updateStats(filtered);
+    renderEficaciaChart(filtered);
+  }
+
+  function updateStats(d) {
+    const n = new Set(d.map(i=>i.prontuario)).size;
+    const avg = d.reduce((a,b)=>a+b.y,0)/d.length || 0;
+    document.getElementById('stat-n').innerText = n;
+    document.getElementById('stat-total').innerText = d.length;
+    document.getElementById('stat-avg').innerText = avg.toFixed(2);
+    document.getElementById('stats-card').style.opacity = 1;
+  }
+
+  function setEficaciaMode(m) {
+    eficaciaMode = m;
+    document.getElementById('tgl-media').className=`toggle-opt ${m==='media'?'active':''}`;
+    document.getElementById('tgl-indiv').className=`toggle-opt ${m==='indiv'?'active':''}`;
+    document.getElementById('grp-pacientes').style.display = m==='indiv'?'block':'none';
+    applyClientFilters();
+  }
+
+  function renderEficaciaChart(dados) {
+    dados.sort((a,b)=>a.x-b.x);
+    const traces = [];
+    
+    const refMap = new Map();
+    dados.forEach(d=>{ if(d.refMin!==null){ if(!refMap.has(d.x)) refMap.set(d.x, {min:d.refMin, max:d.refMax}); }});
+    if(refMap.size>0) {
+      const dx = Array.from(refMap.keys()).sort((a,b)=>a-b);
+      const ymin = dx.map(d=>refMap.get(d).min);
+      const ymax = dx.map(d=>refMap.get(d).max);
+      traces.push({x:dx, y:ymin, mode:'lines', line:{color:'#9ca3af', width:2, dash:'dash'}, showlegend:false, hoverinfo:'skip'});
+      traces.push({x:dx, y:ymax, mode:'lines', line:{color:'#9ca3af', width:2, dash:'dash'}, fill:'tonexty', fillcolor:'rgba(34,197,94,0.25)', name:'Faixa Ref.', hoverinfo:'skip'});
+    }
+
+    if(eficaciaMode==='media') {
+      const grp={}; dados.forEach(d=>{ if(!grp[d.x]) grp[d.x]=[]; grp[d.x].push(d.y); });
+      const xVals = Object.keys(grp).map(Number).sort((a,b)=>a-b);
+      traces.push({x:xVals, y:xVals.map(k=>grp[k].reduce((a,b)=>a+b,0)/grp[k].length), mode:'lines+markers', line:{color:'#2563eb', width:3}, name:'Média', marker:{size:8}});
+    } else {
+      const pacs={}; dados.forEach(d=>{ if(!pacs[d.prontuario]) pacs[d.prontuario]=[]; pacs[d.prontuario].push(d); });
+      Object.keys(pacs).forEach(p=>{
+        const pts = pacs[p].sort((a,b)=>a.x-b.x);
+        traces.push({x:pts.map(k=>k.x), y:pts.map(k=>k.y), mode:'lines+markers', name:p, opacity:0.8, line:{width:2}, marker:{size:5}, text:pts.map(pt=>`Ref: ${pt.refMin}-${pt.refMax}`), hovertemplate:'<b>Dia %{x}: %{y}</b><br>%{text}<extra>%{fullData.name}</extra>'});
+        const errX=[], errY=[]; pts.forEach(k=>{ if(k.refMin!==null && (k.y<k.refMin || k.y>k.refMax)) { errX.push(k.x); errY.push(k.y); } });
+        if(errX.length) traces.push({x:errX, y:errY, mode:'markers', marker:{symbol:'x', color:'#dc2626', size:8, line:{width:2}}, showlegend:false, name:'Fora Ref', hoverinfo:'skip'});
+      });
+    }
+    
+    Plotly.newPlot('chart-eficacia', traces, {
+      title: {text: `Tendência Clínica`, font:{size:18}}, 
+      xaxis: {title:'Dias (Dia 0=Início)', gridcolor:'#e2e8f0'}, 
+      yaxis: {title:'Valor', gridcolor:'#e2e8f0'}, 
+      shapes: [{type:'line', x0:0, y0:0, x1:0, y1:1, xref:'x', yref:'paper', line:{color:'#6b7280', width:1.5}}],
+      template: 'plotly_white', margin: {l:50, r:30, t:50, b:50}
+    });
+  }
+</script>
