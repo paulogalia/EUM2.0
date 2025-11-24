@@ -1,0 +1,258 @@
+style>
+  .exp-container { display: flex; flex-direction: column; height: 100%; gap: 15px; }
+  
+  /* ÁREA DE IA DO EXPLORADOR */
+  .exp-ai-bar {
+    display: flex; gap: 10px; background: #eff6ff; padding: 15px; border-radius: 12px; border: 1px solid #bfdbfe;
+    align-items: center; margin-bottom: 5px;
+  }
+  .exp-ai-input {
+    flex: 1; padding: 12px; border: 1px solid #dbeafe; border-radius: 8px; font-size: 0.95rem; color: #1e3a8a;
+  }
+  .exp-ai-input:focus { outline: none; border-color: #2563eb; background: #fff; }
+  .exp-ai-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 0 20px;
+    border-radius: 8px; font-weight: 700; height: 42px; cursor: pointer; display: flex; align-items: center; gap: 5px;
+  }
+  .exp-ai-btn:hover { box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+
+  /* Balão de Feedback */
+  .exp-ai-bubble {
+    background: #fff; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 8px; 
+    font-size: 0.85rem; color: #475569; display: none; animation: fadeIn 0.3s;
+  }
+
+  .exp-toolbar { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); }
+  .exp-group { display: flex; flex-direction: column; gap: 5px; min-width: 160px; flex: 1; }
+  .exp-group label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .exp-select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; font-size: 0.9rem; color: #334155; transition: all 0.2s; }
+  .exp-btn-action { padding: 0 25px; height: 42px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .exp-btn-secondary { padding: 0 20px; height: 42px; background: white; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .exp-chart-area { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm); flex: 1; position: relative; }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<section id="view-explorador" class="view-section">
+  <div class="exp-container">
+    
+    <div class="exp-ai-bar">
+      <div style="font-size:1.5rem;">🤖</div>
+      <input type="text" id="exp-ai-query" class="exp-ai-input" placeholder="Ex: Qual a distribuição de dose por sexo?">
+      <button class="exp-ai-btn" onclick="askExplorerAI()">
+        <span>✨</span> Analisar
+      </button>
+    </div>
+    <div id="exp-ai-feedback" class="exp-ai-bubble"></div>
+
+    <div class="exp-toolbar">
+      <div class="exp-group" style="flex: 1.5;">
+        <label>1. Fonte</label>
+        <select id="exp-source" class="exp-select" onchange="loadExplorerColumns()"><option value="">Selecione a Aba...</option></select>
+      </div>
+      <div class="exp-group"><label>2. Eixo X</label><select id="exp-axis-x" class="exp-select" disabled><option>--</option></select></div>
+      <div class="exp-group"><label>3. Eixo Y</label><select id="exp-axis-y" class="exp-select" disabled onchange="toggleAggOptions()"><option value="">(Contagem)</option></select></div>
+      <div class="exp-group" id="grp-agg" style="opacity:0.5; pointer-events:none; max-width: 100px;"><label>Op</label><select id="exp-agg" class="exp-select"><option value="count">Contar</option><option value="sum">Soma</option><option value="avg">Média</option></select></div>
+      <div class="exp-group" style="max-width: 100px;"><label>Tipo</label><select id="exp-chart-type" class="exp-select"><option value="bar">📊</option><option value="line">📈</option><option value="pie">🥧</option><option value="scatter">💠</option></select></div>
+      <button class="exp-btn-action" id="btn-gen-exp" onclick="generateExplorerChart()"><span>🚀</span> Plotar</button>
+      <button class="exp-btn-secondary" onclick="exportExplorerToStack()"><span>➡️</span> Fusão</button>
+    </div>
+
+    <div class="exp-chart-area">
+      <div id="chart-explorer" style="width:100%; height:100%;"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  let explorerCols = [];
+  let currentExplorerData = null;
+
+  // Init
+  function initExploradorModule() {
+    const sel = document.getElementById('exp-source');
+    const coreSelect = document.getElementById('cfg-core-aba-fatos');
+    if(coreSelect && coreSelect.options.length > 1) {
+      sel.innerHTML = '<option value="">Selecione a Aba...</option>';
+      for (let i = 0; i < coreSelect.options.length; i++) {
+        const val = coreSelect.options[i].value;
+        if(val) sel.innerHTML += `<option value="${val}">${val}</option>`;
+      }
+    }
+  }
+
+  // Cérebro IA do Explorador
+  function askExplorerAI() {
+    const query = document.getElementById('exp-ai-query').value;
+    const sheet = document.getElementById('exp-source').value;
+    
+    if (!sheet) return alert("Selecione a Fonte de Dados (Aba) primeiro.");
+    if (!query) return;
+    
+    if (explorerCols.length === 0) {
+      // Se ainda não carregou colunas, carrega agora antes de perguntar à IA
+      loadExplorerColumns(() => executeAiQuery(query));
+    } else {
+      executeAiQuery(query);
+    }
+  }
+
+  function executeAiQuery(query) {
+    const feedback = document.getElementById('exp-ai-feedback');
+    feedback.style.display = 'block';
+    feedback.innerText = "🤔 Pensando na melhor visualização...";
+    
+    google.script.run.withSuccessHandler(res => {
+      if (res.erro) {
+        feedback.innerText = "❌ Erro: " + res.erro;
+        return;
+      }
+      
+      if (!res.viavel) {
+        feedback.innerText = "⚠️ Não entendi ou faltam dados: " + res.explicacao;
+        return;
+      }
+      
+      // APLICA A CONFIGURAÇÃO SUGERIDA
+      feedback.innerHTML = `💡 <strong>Sugestão:</strong> ${res.explicacao}`;
+      
+      const cfg = res.config;
+      if(cfg.x) document.getElementById('exp-axis-x').value = cfg.x;
+      if(cfg.y) document.getElementById('exp-axis-y').value = cfg.y;
+      else document.getElementById('exp-axis-y').value = ""; // Reset p/ contagem
+      
+      document.getElementById('exp-chart-type').value = cfg.type;
+      document.getElementById('exp-agg').value = cfg.aggregation;
+      
+      toggleAggOptions();
+      
+      // Gera automaticamente
+      generateExplorerChart();
+      
+    }).apiInterpretarGraficoIA(query, explorerCols);
+  }
+
+  // Funções originais (Carregar, Plotar, Exportar)
+  function loadExplorerColumns(callback) {
+    const sheet = document.getElementById('exp-source').value;
+    const xSel = document.getElementById('exp-axis-x');
+    const ySel = document.getElementById('exp-axis-y');
+    const btn = document.getElementById('btn-gen-exp');
+
+    if(!sheet) { xSel.innerHTML='<option>--</option>'; xSel.disabled=true; return; }
+    btn.innerText = "⏳"; btn.disabled = true;
+    
+    google.script.run.withSuccessHandler(cols => {
+      explorerCols = cols;
+      populateExpSelect(xSel, cols); xSel.disabled = false;
+      ySel.innerHTML = '<option value="">(Contagem de Registros)</option>';
+      cols.forEach(c => ySel.innerHTML += `<option value="${c}">${c}</option>`);
+      ySel.disabled = false;
+      btn.innerHTML = "<span>🚀</span> Plotar"; btn.disabled = false;
+      
+      if(callback) callback(); // Executa IA se foi chamado por ela
+    }).apiGetColumns(sheet);
+  }
+
+  function populateExpSelect(el, list) { el.innerHTML = ''; list.forEach(item => el.innerHTML += `<option value="${item}">${item}</option>`); }
+
+  function toggleAggOptions() {
+    const yVal = document.getElementById('exp-axis-y').value;
+    const aggDiv = document.getElementById('grp-agg');
+    if(yVal) { aggDiv.style.opacity = '1'; aggDiv.style.pointerEvents = 'auto'; } 
+    else { aggDiv.style.opacity = '0.5'; aggDiv.style.pointerEvents = 'none'; }
+  }
+
+  function generateExplorerChart() {
+    const sheet = document.getElementById('exp-source').value;
+    const xCol = document.getElementById('exp-axis-x').value;
+    const yCol = document.getElementById('exp-axis-y').value;
+    const aggType = document.getElementById('exp-agg').value;
+    const chartType = document.getElementById('exp-chart-type').value;
+
+    if(!sheet || !xCol) return alert("Selecione a Fonte e o Eixo X.");
+    
+    const colsToFetch = [xCol];
+    if(yCol) colsToFetch.push(yCol);
+    const idC = explorerCols.find(c => c.toUpperCase().includes('PRONT') || c.toUpperCase().includes('ID'));
+    if(idC && !colsToFetch.includes(idC)) colsToFetch.push(idC);
+
+    const btn = document.getElementById('btn-gen-exp');
+    btn.innerHTML = "<span>🔄</span>"; btn.disabled = true;
+
+    google.script.run.withSuccessHandler(res => {
+      btn.innerHTML = "<span>🚀</span> Plotar"; btn.disabled = false;
+      if(!res.sucesso) return alert(res.erro);
+      
+      currentExplorerData = { raw: res.dados, x: xCol, y: yCol, idCol: idC }; 
+      renderExplorerChart(res.dados, xCol, yCol, aggType, chartType);
+    }).apiGetRawExplorerData(sheet, colsToFetch);
+  }
+
+  function renderExplorerChart(data, xKey, yKey, aggType, chartType) {
+    const grouped = {};
+    data.forEach(row => {
+      let xVal = row[xKey];
+      if(xVal && typeof xVal === 'string' && xVal.match(/^\d{4}-\d{2}-\d{2}T/)) xVal = xVal.split('T')[0];
+      const k = String(xVal);
+      if(!grouped[k]) grouped[k] = [];
+      let val = (yKey && row[yKey] !== undefined) ? row[yKey] : 1;
+      grouped[k].push(val);
+    });
+
+    const xFinal = [], yFinal = [];
+    Object.keys(grouped).forEach(k => {
+      const vals = grouped[k];
+      let res = 0;
+      if(aggType === 'count') res = vals.length;
+      else {
+        const nums = vals.map(v => parseFloat(v) || 0);
+        if(aggType === 'sum') res = nums.reduce((a,b)=>a+b, 0);
+        else if(aggType === 'avg') res = nums.reduce((a,b)=>a+b, 0) / nums.length;
+        else if(aggType === 'max') res = Math.max(...nums);
+        else if(aggType === 'min') res = Math.min(...nums);
+      }
+      xFinal.push(k); yFinal.push(res);
+    });
+
+    // Sort
+    const pairs = xFinal.map((e,i) => ({x: e, y: yFinal[i]}));
+    pairs.sort((a,b) => {
+        const na = parseFloat(a.x), nb = parseFloat(b.x);
+        if(!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.x.localeCompare(b.x);
+    });
+
+    const trace = {
+      x: pairs.map(p => p.x), y: pairs.map(p => p.y),
+      type: chartType === 'scatter' ? 'scatter' : (chartType === 'pie' ? 'pie' : 'bar'),
+      mode: chartType === 'line' || chartType === 'scatter' ? 'lines+markers' : undefined,
+      marker: { color: '#3b82f6' }, name: yKey || 'Registros'
+    };
+    if(chartType === 'pie') { trace.labels = trace.x; trace.values = trace.y; delete trace.x; delete trace.y; }
+
+    const layout = {
+      title: `<b>${yKey || 'Contagem'}</b> por <b>${xKey}</b>`,
+      xaxis: { title: xKey, automargin: true }, yaxis: { title: yKey || 'Valor' },
+      template: 'plotly_white', margin: { l: 50, r: 30, t: 50, b: 50 }
+    };
+
+    Plotly.newPlot('chart-explorer', [trace], layout);
+  }
+
+  function exportExplorerToStack() {
+    if(!currentExplorerData) return alert("Gere um gráfico primeiro.");
+    if(!currentExplorerData.idCol) return alert("Sem Prontuário identificado para cruzamento.");
+    
+    const exportData = currentExplorerData.raw.map(d => ({
+      prontuario: d[currentExplorerData.idCol],
+      valX: d[currentExplorerData.x],
+      valY: currentExplorerData.y ? d[currentExplorerData.y] : 1
+    }));
+    
+    const key = currentExplorerData.y ? 'valY' : 'valX';
+    const label = currentExplorerData.y ? `${currentExplorerData.y} (Exp)` : `${currentExplorerData.x} (Exp)`;
+
+    window.addToStack('Explorador', label, exportData, key);
+  }
+</script>
