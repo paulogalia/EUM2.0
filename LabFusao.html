@@ -1,0 +1,196 @@
+<style>
+  .fusao-layout { display: grid; grid-template-columns: 300px 1fr; gap: 25px; height: 100%; max-width: 1400px; margin: 0 auto; }
+  
+  /* Sidebar do Stack */
+  .stack-panel { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+  .stack-header { font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+  .stack-list { flex: 1; overflow-y: auto; padding-right: 5px; }
+  
+  .stack-placeholder { font-size: 0.8rem; color: #94a3b8; text-align: center; padding: 40px 20px; border: 2px dashed #cbd5e1; border-radius: 8px; background: #fff; }
+
+  .stack-item { 
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; 
+    transition: all 0.2s; position: relative; border-left: 4px solid transparent; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .stack-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+  .stack-item[data-origin="Eficácia"] { border-left-color: #10b981; }
+  .stack-item[data-origin="Segurança"] { border-left-color: #ef4444; }
+  .stack-item[data-origin="Explorador"] { border-left-color: #3b82f6; }
+
+  .stack-tag { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
+  .stack-val { font-size: 0.9rem; font-weight: 700; color: #1e293b; display: block; margin-top: 2px; }
+  .stack-note { background: #fffbeb; color: #92400e; font-size: 0.75rem; padding: 6px; border-radius: 4px; margin-top: 8px; font-style: italic; border: 1px solid #fcd34d; }
+  .stack-meta { font-size: 0.7rem; color: #64748b; margin-top: 6px; display: flex; justify-content: space-between; }
+
+  /* Área Principal de Cruzamento */
+  .cross-area { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+  
+  .cross-controls { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: flex-end; gap: 20px; box-shadow: var(--shadow-sm); }
+  
+  .cross-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .cross-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+  .cross-select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; background: #f8fafc; }
+  
+  .btn-run-cross { 
+    padding: 0 30px; height: 45px; background: #1e293b; color: white; border: none; border-radius: 8px; 
+    font-weight: 600; font-size: 1rem; cursor: pointer; opacity: 0.5; pointer-events: none; transition: 0.2s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .btn-run-cross.ready { opacity: 1; pointer-events: auto; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+  .btn-run-cross:hover { transform: scale(1.02); }
+
+  .cross-chart-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; flex: 1; padding: 20px; box-shadow: var(--shadow-sm); position: relative; }
+</style>
+
+<section id="view-fusao" class="view-section">
+  <div class="fusao-layout">
+    
+    <div class="stack-panel">
+      <div class="stack-header">
+        <span>📦 Dados Salvos</span>
+        <button onclick="initFusaoModule()" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">🔄</button>
+      </div>
+      <div id="fusao-list" class="stack-list">
+        </div>
+    </div>
+
+    <div class="cross-area">
+      <div class="cross-controls">
+        <div class="cross-group">
+          <label class="cross-label">Eixo X (Agrupador)</label>
+          <select id="fusao-x" class="cross-select" onchange="checkFusaoReady()"></select>
+        </div>
+        <div class="cross-group">
+          <label class="cross-label">Eixo Y (Métrica)</label>
+          <select id="fusao-y" class="cross-select" onchange="checkFusaoReady()"></select>
+        </div>
+        <button id="btn-fusao-run" class="btn-run-cross" onclick="runFusaoAnalysis()">
+          <span>🔀</span> Cruzar Dados
+        </button>
+      </div>
+
+      <div class="cross-chart-box">
+        <div id="chart-fusao" style="width:100%; height:100%;">
+          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; color:#cbd5e1;">
+            <div style="font-size:3rem; margin-bottom:10px;">⚗️</div>
+            Selecione dois conjuntos de dados acima para cruzar.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  function initFusaoModule() {
+    const list = document.getElementById('fusao-list');
+    const selX = document.getElementById('fusao-x');
+    const selY = document.getElementById('fusao-y');
+    const stack = window.EUM_STACK || [];
+    
+    // Reset
+    selX.innerHTML = '<option value="">Selecione...</option>';
+    selY.innerHTML = '<option value="">Selecione...</option>';
+    
+    if(stack.length === 0) {
+      list.innerHTML = '<div class="stack-placeholder">O Laboratório está vazio.<br><br>Vá em outros módulos e clique em "Enviar para Fusão" para trazer dados para cá.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    stack.forEach((item, idx) => {
+      // 1. Renderiza na Lista Lateral
+      const div = document.createElement('div');
+      div.className = 'stack-item';
+      div.setAttribute('data-origin', item.origin);
+      const hora = new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+      div.innerHTML = `
+        <div class="stack-meta"><span class="stack-tag">${item.origin}</span><span>${hora}</span></div>
+        <span class="stack-val">${item.label}</span>
+        ${item.note ? `<div class="stack-note">📝 ${item.note}</div>` : ''}
+        <div class="stack-meta" style="margin-top:8px; border-top:1px solid #f1f5f9; padding-top:4px;">
+          <span>👥 ${item.data.length}</span>
+          <span title="Chave usada para valor">🔑 ${item.valueKey}</span>
+        </div>
+      `;
+      list.appendChild(div);
+
+      // 2. Renderiza nos Selects
+      const optHtml = `<option value="${idx}">[${item.origin}] ${item.label}</option>`;
+      selX.innerHTML += optHtml;
+      selY.innerHTML += optHtml;
+    });
+  }
+
+  function checkFusaoReady() {
+    const x = document.getElementById('fusao-x').value;
+    const y = document.getElementById('fusao-y').value;
+    const btn = document.getElementById('btn-fusao-run');
+    
+    if(x !== "" && y !== "" && x !== y) { 
+      btn.classList.add('ready'); 
+    } else { 
+      btn.classList.remove('ready'); 
+    }
+  }
+
+  function runFusaoAnalysis() {
+    const idxX = document.getElementById('fusao-x').value;
+    const idxY = document.getElementById('fusao-y').value;
+    const stack = window.EUM_STACK;
+    const dataX = stack[idxX]; 
+    const dataY = stack[idxY];
+
+    // Map Y para busca rápida O(1)
+    const mapY = {};
+    dataY.data.forEach(d => { mapY[d.prontuario] = d[dataY.valueKey]; });
+
+    // Join
+    const joined = [];
+    dataX.data.forEach(d => {
+      const p = d.prontuario;
+      const valX = d[dataX.valueKey];
+      const valY = mapY[p];
+      if(valX !== undefined && valY !== undefined) joined.push({ x: valX, y: valY });
+    });
+
+    if(joined.length === 0) return alert("Não houve correspondência de Prontuários entre estes conjuntos.");
+
+    // Detect Types
+    const isXNumeric = joined.every(d => !isNaN(parseFloat(d.x)));
+    const isYNumeric = joined.every(d => !isNaN(parseFloat(d.y)));
+
+    // Render
+    const layout = {
+      title: `<b>${dataY.label}</b> vs <b>${dataX.label}</b>`,
+      xaxis: { title: dataX.label }, yaxis: { title: dataY.label },
+      template: 'plotly_white', margin: { l: 60, r: 20, t: 50, b: 80 }
+    };
+
+    if(isXNumeric && isYNumeric) {
+      // Scatter
+      const trace = { 
+        x: joined.map(d => d.x), y: joined.map(d => d.y), 
+        mode: 'markers', type: 'scatter', 
+        marker: { color: '#2563eb', size: 8, opacity: 0.6 } 
+      };
+      Plotly.newPlot('chart-fusao', [trace], layout);
+    } else {
+      // Bar (Categorical X)
+      const grouped = {};
+      joined.forEach(d => {
+        const k = String(d.x); if(!grouped[k]) grouped[k] = [];
+        grouped[k].push(parseFloat(d.y) || 0);
+      });
+      
+      const xKeys = Object.keys(grouped);
+      const yVals = xKeys.map(k => grouped[k].reduce((a,b)=>a+b,0) / grouped[k].length); // Média do Y
+      
+      const trace = { x: xKeys, y: yVals, type: 'bar', marker: { color: '#3b82f6' } };
+      layout.yaxis.title = `Média: ${dataY.label}`;
+      Plotly.newPlot('chart-fusao', [trace], layout);
+    }
+  }
+</script>
