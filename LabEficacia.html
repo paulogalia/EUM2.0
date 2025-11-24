@@ -92,6 +92,119 @@
       </div>
 
       <button class="btn-efi" onclick="loadEficaciaData()">🔄 Carregar Dados</button>
+      <button class="btn-efi" style="background:#475569; margin-top:10px;" onclick="exportToStackEfi()">➡️ Enviar para Fusão</button>
+
+      <div class="stats-mini-card" id="stats-card" style="opacity:0.5">
+        <div style="font-size:0.75rem; font-weight:bold; color:#1e40af; margin-bottom:10px; letter-spacing:0.5px;">RESUMO DA SELEÇÃO</div>
+        <div class="stat-row"><span>Pacientes (N):</span> <span class="stat-val" id="stat-n">-</span></div>
+        <div class="stat-row"><span>Exames Total:</span> <span class="stat-val" id="stat-total">-</span></div>
+        <div class="stat-row"><span>Média Global:</span> <span class="stat-val" id="stat-avg">-</span></div>
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <div class="chart-container-full" id="chart-eficacia"></div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  /* --- Layout Específico deste Módulo --- */
+  .split-layout { display: grid; grid-template-columns: 280px 1fr; gap: 25px; height: 100%; max-width: 1400px; margin: 0 auto; }
+  
+  .filters-panel { background: #ffffff; border-right: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; height: fit-content; border: 1px solid #e5e7eb; }
+  .filters-header { font-weight: 700; color: #1f2937; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
+  
+  .filter-group label { font-size: 0.8rem; margin-bottom: 4px; font-weight:600; color:#4b5563; display:block; }
+  .filter-input { width: 100%; padding: 8px; font-size: 0.9rem; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; box-sizing:border-box; }
+  .filter-input-row { display: flex; gap: 8px; }
+  
+  .toggle-container { background: #f3f4f6; padding: 4px; border-radius: 6px; display: flex; }
+  .toggle-opt { flex: 1; text-align: center; padding: 6px; font-size: 0.8rem; cursor: pointer; border-radius: 4px; color: #6b7280; font-weight: 500; transition:0.2s; }
+  .toggle-opt.active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+  /* Checkbox List (Seletor de Pacientes) */
+  .checkbox-list { max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; margin-top:5px; }
+  .checkbox-item { padding: 8px 10px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+  .checkbox-item:hover { background: #e2e8f0; }
+  .checkbox-item input { width: auto; margin: 0; cursor: pointer; }
+
+  .stats-mini-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 15px; margin-top: 10px; opacity: 0.5; transition: opacity 0.3s; }
+  .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem; }
+  .stat-val { font-weight: 700; color: #1e40af; }
+
+  .chart-area { display: flex; flex-direction: column; height: 100%; }
+  .chart-container-full { flex: 1; background: #fff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 15px; min-height: 500px; }
+  
+  /* Botão Gerar local */
+  .btn-efi { background: #2563eb; color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; margin-top: 15px; }
+  .btn-efi:hover { background: #1d4ed8; }
+</style>
+
+<section id="view-eficacia" class="view-section">
+  <div class="split-layout">
+    
+    <div class="filters-panel">
+      <div class="filters-header">Parâmetros de Análise</div>
+
+      <div class="filter-group">
+        <label>Medicamento</label>
+        <select id="efi-med" class="filter-input"><option>Carregando...</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Exame Alvo</label>
+        <select id="efi-exame" class="filter-input"><option>Carregando...</option></select>
+      </div>
+
+      <hr style="border:0; border-top:1px solid #e5e7eb; margin:15px 0;">
+
+      <div class="filter-group">
+        <label>Sexo</label>
+        <select id="fil-sexo" class="filter-input" onchange="applyClientFilters()">
+          <option value="all">Todos</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Idade (Anos)</label>
+        <div class="filter-input-row">
+          <input type="number" id="fil-age-min" placeholder="Min" class="filter-input" onchange="applyClientFilters()">
+          <input type="number" id="fil-age-max" placeholder="Max" class="filter-input" onchange="applyClientFilters()">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Dose (mg)</label>
+        <div class="filter-input-row">
+          <input type="number" id="fil-dose-min" placeholder="Min" class="filter-input" onchange="applyClientFilters()">
+          <input type="number" id="fil-dose-max" placeholder="Max" class="filter-input" onchange="applyClientFilters()">
+        </div>
+      </div>
+
+      <div class="filter-group" style="margin-top:15px;">
+        <label>Modo Visual</label>
+        <div class="toggle-container">
+          <div class="toggle-opt active" id="tgl-media" onclick="setEficaciaMode('media')">Média</div>
+          <div class="toggle-opt" id="tgl-indiv" onclick="setEficaciaMode('indiv')">Individual</div>
+        </div>
+      </div>
+
+      <div class="filter-group" id="grp-pacientes" style="display:none; border-top:1px solid #e5e7eb; padding-top:10px; margin-top:10px;">
+        <label style="display:flex; justify-content:space-between; align-items:center;">
+          Seleção Pacientes
+          <span style="font-size:0.7rem; color:#2563eb; cursor:pointer;" onclick="toggleAllPatients()">Inverter/Todos</span>
+        </label>
+        <div id="list-pacientes" class="checkbox-list">
+          <div style="padding:10px; color:#64748b; font-size:0.8rem;">Carregue dados primeiro...</div>
+        </div>
+      </div>
+
+      <button class="btn-efi" onclick="loadEficaciaData()">🔄 Carregar Dados</button>
+
+      <button class="btn-efi" style="background:#475569; margin-top:10px;" onclick="exportToStackEfi()">📦 Empilhar (Fusão)</button>
 
       <div class="stats-mini-card" id="stats-card" style="opacity:0.5">
         <div style="font-size:0.75rem; font-weight:bold; color:#1e40af; margin-bottom:10px; letter-spacing:0.5px;">RESUMO DA SELEÇÃO</div>
@@ -113,7 +226,6 @@
   let eficaciaMode = 'media';
   let allPatientsSelected = true;
 
-  // Inicialização chamada pelo Dashboard
   function initEficaciaModule(config) {
     const c = config.core; 
     const e = config.exames;
@@ -233,5 +345,24 @@
       shapes: [{type:'line', x0:0, y0:0, x1:0, y1:1, xref:'x', yref:'paper', line:{color:'#6b7280', width:1.5}}],
       template: 'plotly_white', margin: {l:50, r:30, t:50, b:50}
     });
+  }
+
+  function exportToStackEfi() {
+    if(!rawEficaciaData || rawEficaciaData.length === 0) return alert("Carregue dados primeiro.");
+    
+    const exportData = rawEficaciaData.map(d => ({
+      prontuario: d.prontuario,
+      valor: d.y,
+      dia: d.x
+    }));
+
+    const med = document.getElementById('efi-med').value;
+    const ex = document.getElementById('efi-exame').value;
+
+    if(window.addToStack) {
+      window.addToStack('Eficácia', `${ex} (${med})`, exportData, 'valor');
+    } else {
+      alert("Erro: Stack global não inicializado.");
+    }
   }
 </script>
