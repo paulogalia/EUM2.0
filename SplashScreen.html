@@ -19,10 +19,10 @@
     background: white;
     border-radius: 50%;
     opacity: 0.8;
-    transition: all 0.5s ease-in; /* Transição suave para o efeito dobra */
+    transition: all 0.5s ease-in;
   }
 
-  /* --- FOGUETE --- */
+  /* --- FOGUETE (INTACTO) --- */
   .rocket-container {
     position: absolute;
     bottom: 30vh;
@@ -32,7 +32,6 @@
     transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1);
   }
 
-  /* SVG do Foguete (O "Gordinho" que você gostou) */
   .rocket-svg {
     width: 100%; height: auto;
     filter: drop-shadow(0 10px 30px rgba(0,0,0,0.6));
@@ -63,87 +62,82 @@
 
   @keyframes flicker { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.05); opacity: 1; } }
 
-  /* --- TEXTO E BOTÃO --- */
+  /* --- TEXTO E BOTÕES (ATUALIZADO) --- */
   .loading-text {
-    margin-bottom: 10vh;
+    margin-bottom: 14vh; /* Ajuste leve para caber os botões */
     color: #64748b; font-family: 'Inter', sans-serif; font-size: 0.8rem; letter-spacing: 3px;
     text-transform: uppercase; font-weight: 700;
     transition: opacity 0.3s;
   }
 
-  .start-btn {
-    position: absolute; bottom: 10vh;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    padding: 15px 40px;
-    font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 1px;
-    border-radius: 30px;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+  /* Container para os dois botões */
+  .buttons-container {
+    position: absolute; bottom: 8vh;
+    display: flex; gap: 20px;
     opacity: 0; transform: translateY(20px); /* Começa invisível */
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 20;
   }
   
-  .start-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 30px rgba(37, 99, 235, 0.6);
-    transform: scale(1.05);
+  .buttons-container.visible {
+    opacity: 1; transform: translateY(0);
+  }
+
+  .start-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 12px 30px;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px;
+    border-radius: 30px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
+    transition: all 0.3s;
+    min-width: 160px;
   }
   
-  .start-btn.visible {
-    opacity: 1; transform: translateY(0);
+  .start-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 30px rgba(37, 99, 235, 0.4);
+    transform: scale(1.05);
+  }
+
+  /* Estilo especial para o botão IA */
+  .start-btn.ai-mode {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.6) 0%, rgba(99, 102, 241, 0.6) 100%);
+    border-color: #818cf8;
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.3);
+  }
+  .start-btn.ai-mode:hover {
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.8) 0%, rgba(99, 102, 241, 0.8) 100%);
   }
 
   /* --- ESTADO DE DOBRA (WARP SPEED) --- */
   
-  /* 1. Estrelas viram riscos */
   body.warp-mode .star {
-    width: 2px !important; /* Fica fino */
-    height: 60vh !important; /* Fica comprido */
-    border-radius: 0 !important;
+    width: 2px !important; height: 60vh !important; border-radius: 0 !important;
     background: linear-gradient(to bottom, transparent, #fff, transparent) !important;
-    opacity: 0.6;
-    /* Animação de queda ultra rápida */
-    animation: warpFall 0.15s linear infinite !important;
+    opacity: 0.6; animation: warpFall 0.15s linear infinite !important;
   }
   
-  /* 2. Foguete Treme e Sobe */
-  body.warp-mode .rocket-svg {
-    animation: shakeHigh 0.1s infinite;
-  }
-  body.warp-mode .rocket-container {
-    transition: bottom 1.5s cubic-bezier(0.5, 0, 1, 0.5);
-    bottom: 120vh; /* Voa para cima */
-  }
+  body.warp-mode .rocket-svg { animation: shakeHigh 0.1s infinite; }
+  body.warp-mode .rocket-container { transition: bottom 1.5s cubic-bezier(0.5, 0, 1, 0.5); bottom: 120vh; }
+  body.warp-mode .fire-wrapper { height: 300px; width: 80px; }
+  body.warp-mode .fire-core { background: radial-gradient(circle at 50% 0%, #fff 20%, #60a5fa 50%, #2563eb 90%, transparent 100%); }
 
-  /* 3. Fogo Cresce */
-  body.warp-mode .fire-wrapper {
-    height: 300px; width: 80px;
-  }
-  body.warp-mode .fire-core {
-    background: radial-gradient(circle at 50% 0%, #fff 20%, #60a5fa 50%, #2563eb 90%, transparent 100%); /* Fogo fica azul (mais quente) */
-  }
-
-  /* 4. Esconde UI */
-  body.warp-mode .start-btn, 
+  /* Esconde UI ao voar */
+  body.warp-mode .buttons-container, 
   body.warp-mode .loading-text {
     opacity: 0; pointer-events: none;
   }
 
-  @keyframes warpFall {
-    0% { transform: translateY(-100vh); }
-    100% { transform: translateY(100vh); }
-  }
-  
-  @keyframes shakeHigh {
-    0% { transform: translate(0, 0); }
-    25% { transform: translate(-3px, 3px); }
-    50% { transform: translate(3px, -3px); }
-    75% { transform: translate(-3px, -3px); }
-    100% { transform: translate(3px, 3px); }
+  @keyframes warpFall { 0% { transform: translateY(-100vh); } 100% { transform: translateY(100vh); } }
+  @keyframes shakeHigh { 
+    0% { transform: translate(0, 0); } 25% { transform: translate(-3px, 3px); } 
+    50% { transform: translate(3px, -3px); } 75% { transform: translate(-3px, -3px); } 
+    100% { transform: translate(3px, 3px); } 
   }
 
 </style>
@@ -169,82 +163,74 @@
   </div>
   
   <div class="loading-text" id="status-text">A PREPARAR MOTORES...</div>
-  <button class="start-btn" id="btn-launch" onclick="triggerWarp()">INICIAR PROJETO</button>
+  
+  <div class="buttons-container" id="btn-group">
+    <button class="start-btn" onclick="triggerWarp('continue')">CONTINUAR</button>
+    <button class="start-btn ai-mode" onclick="triggerWarp('new')">✨ NOVO COM IA</button>
+  </div>
 </div>
 
 <script>
-  // 1. Gerar Estrelas
+  // 1. Gerar Estrelas (Código original)
   (function createStars() {
     const container = document.getElementById('star-container');
     if(!container) return;
     for (let i = 0; i < 150; i++) {
       const star = document.createElement('div');
       star.className = 'star';
-      // Posição inicial aleatória
       star.style.left = Math.random() * 100 + '%';
       star.style.top = Math.random() * 100 + '%';
-      
-      // Tamanho e velocidade variados para efeito de profundidade
       const size = Math.random() * 3 + 1;
       star.style.width = size + 'px';
       star.style.height = size + 'px';
-      
-      // Animação inicial (twinkle / movimento lento para baixo)
       const duration = Math.random() * 5 + 2;
       star.style.animation = `twinkle ${duration}s infinite ease-in-out`;
-      
       container.appendChild(star);
     }
   })();
 
-  // Variável para armazenar o callback de sucesso do Dashboard
   let dashboardReadyCallback = null;
   let isReadyToLaunch = false;
 
-  // 2. Função chamada pelo Dashboard.html ao iniciar
+  // 2. Start Splash (Chamado pelo Dashboard)
   function startSplashSequence(onComplete) {
     dashboardReadyCallback = onComplete;
     
-    // Espera 2 segundos "preparando" e mostra o botão
+    // Espera 2.5s e mostra os botões
     setTimeout(() => {
-      const btn = document.getElementById('btn-launch');
+      const btns = document.getElementById('btn-group');
       const txt = document.getElementById('status-text');
-      if(btn && txt) {
-        txt.style.opacity = 0; // Esconde "A preparar..."
-        btn.classList.add('visible'); // Mostra Botão
+      if(btns && txt) {
+        txt.style.opacity = 0;
+        btns.classList.add('visible'); // Mostra o container
         isReadyToLaunch = true;
       }
     }, 2500);
-
-    // Retorna uma função vazia pois o controlo agora é manual (botão)
-    // Mas se o utilizador não clicar em 10s, podemos forçar (opcional)
-    return () => { console.log("Dados carregados. À espera do utilizador..."); };
   }
 
-  // 3. Função do Botão (Efeito Dobra)
-  function triggerWarp() {
+  // 3. Trigger Warp (Recebe o modo: 'new' ou 'continue')
+  function triggerWarp(mode) {
     if (!isReadyToLaunch) return;
 
-    document.body.classList.add('warp-mode'); // ATIVA O CSS MÁGICO
+    document.body.classList.add('warp-mode'); // ATIVA DOBRA
     
-    // Tempo da animação de dobra (1.5s) antes de fechar
     setTimeout(() => {
       const splash = document.getElementById('splash-screen');
       if(splash) splash.style.opacity = 0;
       
       setTimeout(() => {
         if(splash) splash.remove();
-        if(dashboardReadyCallback) dashboardReadyCallback();
+        // Passa o modo para o callback do Dashboard
+        if(dashboardReadyCallback) dashboardReadyCallback(mode);
       }, 500);
     }, 1500);
   }
 </script>
 
 <style>
-  /* Animação suave das estrelas em idle */
   @keyframes twinkle {
     0% { opacity: 0.3; transform: translateY(0px); }
     50% { opacity: 1; }
-    100% { opacity: 0.3; transform: translateY(20px); } /* Caem devagar */
+    100% { opacity: 0.3; transform: translateY(20px); }
   }
 </style>
