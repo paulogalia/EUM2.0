@@ -93,6 +93,105 @@
   </div>
 </section>
 
+<style>
+  /* Layout Básico */
+  .sec-layout { display: grid; grid-template-columns: 260px 1fr; gap: 25px; height: 100%; max-width: 1400px; margin: 0 auto; }
+  
+  /* Sidebar */
+  .sec-sidebar { background: #fff; border-right: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; border: 1px solid #e5e7eb; }
+  .sec-header { font-weight: 800; color: #1e293b; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; font-size:1.1rem; letter-spacing:-0.02em; }
+  <button class="btn-sec" style="background:#475569; margin-top:10px;" onclick="exportToStackSec()">
+  ➡️ Enviar para Fusão
+  </button>
+  /* Cards de KPI (Mini) */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center; }
+  .kpi-val { font-size: 1.2rem; font-weight: 800; color: #2563eb; display: block; line-height: 1; }
+  .kpi-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 600; margin-top: 4px; display: block; }
+  
+  /* Botões de Visualização (Icons) */
+  .view-toggles { display: flex; gap: 5px; background: #f1f5f9; padding: 4px; border-radius: 8px; margin-bottom: 10px; }
+  .view-btn { flex: 1; border: none; background: transparent; padding: 8px; cursor: pointer; border-radius: 6px; color: #64748b; transition: 0.2s; font-size: 0.85rem; font-weight: 600; }
+  .view-btn.active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+  .view-btn:hover:not(.active) { color: #334155; }
+
+  /* Filtros */
+  .sec-filter label { font-size: 0.75rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px; }
+  .sec-select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: #fff; }
+
+  /* Botão Ação */
+  .btn-sec { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; margin-top: auto; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); transition: transform 0.1s; }
+  .btn-sec:active { transform: translateY(1px); }
+
+  /* Área Gráfica */
+  .sec-chart-area { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; }
+  .chart-title { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+  .chart-subtitle { font-size: 0.9rem; color: #64748b; margin-bottom: 20px; }
+</style>
+
+<section id="view-seguranca" class="view-section">
+  <div class="sec-layout">
+    
+    <div class="sec-sidebar">
+      <div class="sec-header">🛡️ Safety Lab</div>
+      
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-val" id="kpi-incidencia">-</span>
+          <span class="kpi-label">Incidência</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-val" id="kpi-graves" style="color:#dc2626">-</span>
+          <span class="kpi-label">Graves</span>
+        </div>
+      </div>
+
+      <div class="sec-filter">
+        <label>MEDICAMENTO</label>
+        <select id="sec-med" class="sec-select"><option>Carregando...</option></select>
+      </div>
+
+      <div class="sec-filter">
+        <label>FILTRAR GRAVIDADE</label>
+        <select id="sec-grav" class="sec-select" onchange="updateSecCharts()">
+          <option value="all">Todas</option>
+          <option value="Grave">Apenas Graves</option>
+          <option value="Moderada">Moderadas+</option>
+        </select>
+      </div>
+      
+      <div class="sec-filter">
+        <label>SEXO</label>
+        <select id="sec-sexo" class="sec-select" onchange="updateSecCharts()">
+          <option value="all">Todos</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+        </select>
+      </div>
+
+      <hr style="border:0; border-top:1px solid #f1f5f9; margin:10px 0;">
+
+      <div class="sec-filter">
+        <label>TIPO DE ANÁLISE</label>
+        <div class="view-toggles">
+          <button class="view-btn active" onclick="setSecView('matrix', this)">Matriz</button>
+          <button class="view-btn" onclick="setSecView('timeline', this)">Tempo</button>
+          <button class="view-btn" onclick="setSecView('pareto', this)">Pareto</button>
+        </div>
+      </div>
+
+      <button class="btn-sec" onclick="loadSecData()">⚠️ Analisar Risco</button>
+
+      <button class="btn-sec" style="background:#475569; margin-top:10px;" onclick="exportToStackSec()">📦 Empilhar (Fusão)</button>
+    </div>
+
+    <div class="sec-chart-area">
+      <div id="sec-chart-container" style="width:100%; height:100%;"></div>
+    </div>
+
+  </div>
+</section>
+
 <script>
   let rawSecData = [];
   let secMeta = {};
@@ -232,5 +331,24 @@
       yaxis: {title: 'Contagem'},
       template: 'plotly_white'
     });
+  }
+
+  function exportToStackSec() {
+    if(!rawSecData || rawSecData.length === 0) return alert("Analise o risco primeiro.");
+    
+    const exportData = rawSecData.map(d => ({
+      prontuario: d.prontuario,
+      gravidade: d.gravidade,
+      causalidade: d.causalidade,
+      tipo: d.descricao
+    }));
+
+    const med = document.getElementById('sec-med').value;
+
+    if(window.addToStack) {
+      window.addToStack('Segurança', `Eventos ${med}`, exportData, 'gravidade');
+    } else {
+      alert("Erro: Stack global não inicializado.");
+    }
   }
 </script>
