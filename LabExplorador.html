@@ -1,66 +1,132 @@
-style>
-  .exp-container { display: flex; flex-direction: column; height: 100%; gap: 15px; }
-  
-  /* ÁREA DE IA DO EXPLORADOR */
-  .exp-ai-bar {
-    display: flex; gap: 10px; background: #eff6ff; padding: 15px; border-radius: 12px; border: 1px solid #bfdbfe;
-    align-items: center; margin-bottom: 5px;
+<style>
+  /* LAYOUT PRINCIPAL: GRID LATERAL */
+  .exp-layout { 
+    display: grid; 
+    grid-template-columns: 280px 1fr; /* Barra Lateral Fixa | Gráfico Fluido */
+    gap: 20px; 
+    height: 100%; 
+    max-width: 1600px; 
+    margin: 0 auto; 
+    overflow: hidden;
   }
+  
+  /* BARRA LATERAL DE CONTROLO */
+  .exp-sidebar { 
+    background: #fff; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 12px; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+    overflow-y: auto; 
+    box-shadow: var(--shadow-sm);
+  }
+
+  .exp-header { font-weight: 800; color: #1e293b; font-size: 1.1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 5px; }
+
+  /* ÁREA DE IA (Compacta na Sidebar) */
+  .exp-ai-box {
+    background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; 
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .exp-ai-label { font-size: 0.75rem; font-weight: 700; color: #1e40af; display:flex; align-items:center; gap:5px; }
   .exp-ai-input {
-    flex: 1; padding: 12px; border: 1px solid #dbeafe; border-radius: 8px; font-size: 0.95rem; color: #1e3a8a;
+    width: 100%; padding: 8px; border: 1px solid #dbeafe; border-radius: 6px; font-size: 0.85rem; color: #1e3a8a; box-sizing: border-box;
   }
-  .exp-ai-input:focus { outline: none; border-color: #2563eb; background: #fff; }
   .exp-ai-btn {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 0 20px;
-    border-radius: 8px; font-weight: 700; height: 42px; cursor: pointer; display: flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px;
+    border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; text-align: center; width: 100%;
   }
-  .exp-ai-btn:hover { box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+  .exp-ai-btn:hover { background: #1e40af; }
 
-  /* Balão de Feedback */
-  .exp-ai-bubble {
-    background: #fff; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 8px; 
-    font-size: 0.85rem; color: #475569; display: none; animation: fadeIn 0.3s;
-  }
+  /* CONTROLES MANUAIS */
+  .exp-group { display: flex; flex-direction: column; gap: 4px; }
+  .exp-group label { font-size: 0.75rem; font-weight: 700; color: #64748b; }
+  .exp-select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f8fafc; font-size: 0.85rem; color: #334155; }
+  .exp-select option.virtual { color: #7c3aed; font-weight: bold; background: #f5f3ff; }
 
-  .exp-toolbar { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); }
-  .exp-group { display: flex; flex-direction: column; gap: 5px; min-width: 160px; flex: 1; }
-  .exp-group label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-  .exp-select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; font-size: 0.9rem; color: #334155; transition: all 0.2s; }
-  .exp-btn-action { padding: 0 25px; height: 42px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-  .exp-btn-secondary { padding: 0 20px; height: 42px; background: white; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-  .exp-chart-area { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm); flex: 1; position: relative; }
+  /* BOTÕES DE AÇÃO */
+  .btn-plot { background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+  .btn-plot:hover { background: #059669; }
   
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  .btn-stack { background: white; border: 1px solid #cbd5e1; color: #475569; padding: 8px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; display: flex; justify-content: center; gap: 5px; font-size: 0.85rem; }
+  .btn-stack:hover { border-color: #94a3b8; color: #1e293b; }
+
+  /* ÁREA DO GRÁFICO */
+  .exp-chart-area { 
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; 
+    box-shadow: var(--shadow-sm); position: relative; height: 100%; overflow: hidden;
+  }
+
+  /* Feedback IA */
+  .ai-feedback { font-size: 0.75rem; color: #059669; background: #ecfdf5; padding: 8px; border-radius: 6px; display:none; border:1px solid #a7f3d0; margin-top:5px; }
 </style>
 
-<section id="view-explorador" class="view-section">
-  <div class="exp-container">
+<section id="view-explorador" class="view-section" style="padding: 20px; height: 100%; box-sizing: border-box;">
+  <div class="exp-layout">
     
-    <div class="exp-ai-bar">
-      <div style="font-size:1.5rem;">🤖</div>
-      <input type="text" id="exp-ai-query" class="exp-ai-input" placeholder="Ex: Qual a distribuição de dose por sexo?">
-      <button class="exp-ai-btn" onclick="askExplorerAI()">
-        <span>✨</span> Analisar
-      </button>
-    </div>
-    <div id="exp-ai-feedback" class="exp-ai-bubble"></div>
+    <div class="exp-sidebar">
+      <div class="exp-header">🧭 Explorador</div>
 
-    <div class="exp-toolbar">
-      <div class="exp-group" style="flex: 1.5;">
-        <label>1. Fonte</label>
-        <select id="exp-source" class="exp-select" onchange="loadExplorerColumns()"><option value="">Selecione a Aba...</option></select>
+      <div class="exp-ai-box">
+        <div class="exp-ai-label"><span>🤖</span> Pergunte aos Dados</div>
+        <input type="text" id="exp-ai-query" class="exp-ai-input" placeholder="Ex: Dose por peso vs Idade?">
+        <button class="exp-ai-btn" onclick="askExplorerAI()">✨ Analisar</button>
+        <div id="exp-ai-feedback" class="ai-feedback"></div>
       </div>
-      <div class="exp-group"><label>2. Eixo X</label><select id="exp-axis-x" class="exp-select" disabled><option>--</option></select></div>
-      <div class="exp-group"><label>3. Eixo Y</label><select id="exp-axis-y" class="exp-select" disabled onchange="toggleAggOptions()"><option value="">(Contagem)</option></select></div>
-      <div class="exp-group" id="grp-agg" style="opacity:0.5; pointer-events:none; max-width: 100px;"><label>Op</label><select id="exp-agg" class="exp-select"><option value="count">Contar</option><option value="sum">Soma</option><option value="avg">Média</option></select></div>
-      <div class="exp-group" style="max-width: 100px;"><label>Tipo</label><select id="exp-chart-type" class="exp-select"><option value="bar">📊</option><option value="line">📈</option><option value="pie">🥧</option><option value="scatter">💠</option></select></div>
-      <button class="exp-btn-action" id="btn-gen-exp" onclick="generateExplorerChart()"><span>🚀</span> Plotar</button>
-      <button class="exp-btn-secondary" onclick="exportExplorerToStack()"><span>➡️</span> Fusão</button>
+
+      <hr style="border:0; border-top:1px solid #f1f5f9; margin:5px 0;">
+
+      <div class="exp-group">
+        <label>1. Fonte de Dados</label>
+        <select id="exp-source" class="exp-select" onchange="loadExplorerColumns()"><option value="">Carregando...</option></select>
+      </div>
+
+      <div class="exp-group">
+        <label>2. Eixo X (Agrupador)</label>
+        <select id="exp-axis-x" class="exp-select" disabled><option>--</option></select>
+      </div>
+
+      <div class="exp-group">
+        <label>3. Eixo Y (Métrica)</label>
+        <select id="exp-axis-y" class="exp-select" disabled onchange="toggleAggOptions()"><option value="">(Contagem)</option></select>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div class="exp-group" id="grp-agg" style="opacity:0.5; pointer-events:none;">
+          <label>Operação</label>
+          <select id="exp-agg" class="exp-select"><option value="count">Contar</option><option value="sum">Soma</option><option value="avg">Média</option></select>
+        </div>
+        <div class="exp-group">
+          <label>Gráfico</label>
+          <select id="exp-chart-type" class="exp-select">
+            <option value="bar">📊 Barra</option>
+            <option value="line">📈 Linha</option>
+            <option value="pie">🥧 Pizza</option>
+            <option value="scatter">💠 Dispersão</option>
+            <option value="box">📦 Boxplot</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-plot" id="btn-gen-exp" onclick="generateExplorerChart()">🚀 Plotar Gráfico</button>
+      <button class="btn-stack" onclick="exportExplorerToStack()">➡️ Enviar p/ Fusão</button>
+
+      <div style="margin-top:auto; background:#f8fafc; padding:10px; border-radius:6px; border:1px dashed #cbd5e1;">
+        <div style="font-size:0.7rem; font-weight:bold; color:#64748b; margin-bottom:5px;">💡 RECEITAS ÚTEIS:</div>
+        <div style="font-size:0.7rem; color:#475569; line-height:1.4;">
+          • <b>Renal (Histograma):</b> X=TFG(Calc), Y=(Vazio), Barra.<br>
+          • <b>Dose vs Peso:</b> X=Peso, Y=Dose24h, Dispersão.<br>
+          • <b>Ajuste Dose:</b> X=TFG(Calc), Y=Dose/Kg(Calc), Dispersão.
+        </div>
+      </div>
     </div>
 
     <div class="exp-chart-area">
       <div id="chart-explorer" style="width:100%; height:100%;"></div>
     </div>
+
   </div>
 </section>
 
@@ -72,89 +138,99 @@ style>
   function initExploradorModule() {
     const sel = document.getElementById('exp-source');
     const coreSelect = document.getElementById('cfg-core-aba-fatos');
-    if(coreSelect && coreSelect.options.length > 1) {
-      sel.innerHTML = '<option value="">Selecione a Aba...</option>';
+    // Pega a aba configurada no Core como padrão
+    if(coreSelect && coreSelect.options.length > 0) {
+      sel.innerHTML = '<option value="">Selecione...</option>';
+      // Adiciona a aba do core primeiro (mais provável)
+      const coreSheet = document.getElementById('cfg-core-aba-fatos').value;
+      if(coreSheet) sel.innerHTML += `<option value="${coreSheet}" selected>★ ${coreSheet}</option>`;
+      
+      // Adiciona as outras
       for (let i = 0; i < coreSelect.options.length; i++) {
         const val = coreSelect.options[i].value;
-        if(val) sel.innerHTML += `<option value="${val}">${val}</option>`;
+        if(val && val !== coreSheet) sel.innerHTML += `<option value="${val}">${val}</option>`;
       }
+      // Carrega colunas automaticamente se houver seleção
+      if(sel.value) loadExplorerColumns();
     }
   }
 
-  // Cérebro IA do Explorador
+  // IA
   function askExplorerAI() {
     const query = document.getElementById('exp-ai-query').value;
     const sheet = document.getElementById('exp-source').value;
-    
-    if (!sheet) return alert("Selecione a Fonte de Dados (Aba) primeiro.");
+    if (!sheet) return alert("Selecione a Fonte de Dados primeiro.");
     if (!query) return;
     
-    if (explorerCols.length === 0) {
-      // Se ainda não carregou colunas, carrega agora antes de perguntar à IA
-      loadExplorerColumns(() => executeAiQuery(query));
-    } else {
-      executeAiQuery(query);
-    }
+    const btn = document.querySelector('.exp-ai-btn');
+    const originalText = btn.innerText;
+    btn.innerText = "⏳"; btn.disabled = true;
+
+    if (explorerCols.length === 0) loadExplorerColumns(() => executeAiQuery(query, btn, originalText));
+    else executeAiQuery(query, btn, originalText);
   }
 
-  function executeAiQuery(query) {
+  function executeAiQuery(query, btn, originalText) {
     const feedback = document.getElementById('exp-ai-feedback');
-    feedback.style.display = 'block';
-    feedback.innerText = "🤔 Pensando na melhor visualização...";
     
     google.script.run.withSuccessHandler(res => {
-      if (res.erro) {
-        feedback.innerText = "❌ Erro: " + res.erro;
-        return;
-      }
+      btn.innerText = originalText; btn.disabled = false;
+      if (res.erro) { alert(res.erro); return; }
+      if (!res.viavel) { alert("IA: " + res.explicacao); return; }
       
-      if (!res.viavel) {
-        feedback.innerText = "⚠️ Não entendi ou faltam dados: " + res.explicacao;
-        return;
-      }
+      feedback.innerHTML = `💡 ${res.explicacao}`;
+      feedback.style.display = 'block';
       
-      // APLICA A CONFIGURAÇÃO SUGERIDA
-      feedback.innerHTML = `💡 <strong>Sugestão:</strong> ${res.explicacao}`;
-      
-      const cfg = res.config;
-      if(cfg.x) document.getElementById('exp-axis-x').value = cfg.x;
-      if(cfg.y) document.getElementById('exp-axis-y').value = cfg.y;
-      else document.getElementById('exp-axis-y').value = ""; // Reset p/ contagem
-      
-      document.getElementById('exp-chart-type').value = cfg.type;
-      document.getElementById('exp-agg').value = cfg.aggregation;
+      const setSelect = (id, val) => {
+         const el = document.getElementById(id);
+         if (!val) { el.value = ""; return; }
+         if (el.querySelector(`option[value="${val}"]`)) { el.value = val; return; }
+         for (let i=0; i<el.options.length; i++) {
+            if (el.options[i].text.includes(val) || el.options[i].value.includes(val)) { el.selectedIndex = i; return; }
+         }
+      };
+
+      setSelect('exp-axis-x', res.config.x);
+      setSelect('exp-axis-y', res.config.y);
+      document.getElementById('exp-chart-type').value = res.config.type || 'bar';
+      document.getElementById('exp-agg').value = res.config.aggregation || 'count';
       
       toggleAggOptions();
-      
-      // Gera automaticamente
       generateExplorerChart();
       
     }).apiInterpretarGraficoIA(query, explorerCols);
   }
 
-  // Funções originais (Carregar, Plotar, Exportar)
+  // Funções Core
   function loadExplorerColumns(callback) {
     const sheet = document.getElementById('exp-source').value;
     const xSel = document.getElementById('exp-axis-x');
     const ySel = document.getElementById('exp-axis-y');
     const btn = document.getElementById('btn-gen-exp');
 
-    if(!sheet) { xSel.innerHTML='<option>--</option>'; xSel.disabled=true; return; }
-    btn.innerText = "⏳"; btn.disabled = true;
+    if(!sheet) return;
+    btn.innerText = "⏳ Carregando colunas..."; btn.disabled = true;
     
     google.script.run.withSuccessHandler(cols => {
       explorerCols = cols;
-      populateExpSelect(xSel, cols); xSel.disabled = false;
-      ySel.innerHTML = '<option value="">(Contagem de Registros)</option>';
-      cols.forEach(c => ySel.innerHTML += `<option value="${c}">${c}</option>`);
-      ySel.disabled = false;
-      btn.innerHTML = "<span>🚀</span> Plotar"; btn.disabled = false;
+      const virtualCols = [
+        {val: "CALC_RENAL_TFG", label: "✨ TFG Renal (Calc)"},
+        {val: "CALC_DOSE_KG", label: "✨ Dose/Kg (Calc)"},
+        {val: "CALC_IDADE", label: "✨ Idade (Calc)"}
+      ];
+
+      let opts = '';
+      cols.forEach(c => opts += `<option value="${c}">${c}</option>`);
+      opts += `<option disabled>─── CALCULADOS ───</option>`;
+      virtualCols.forEach(v => opts += `<option value="${v.val}" class="virtual">${v.label}</option>`);
+
+      xSel.innerHTML = opts; xSel.disabled = false;
+      ySel.innerHTML = '<option value="">(Nenhum - Contagem)</option>' + opts; ySel.disabled = false;
       
-      if(callback) callback(); // Executa IA se foi chamado por ela
+      btn.innerText = "🚀 Plotar Gráfico"; btn.disabled = false;
+      if(callback) callback();
     }).apiGetColumns(sheet);
   }
-
-  function populateExpSelect(el, list) { el.innerHTML = ''; list.forEach(item => el.innerHTML += `<option value="${item}">${item}</option>`); }
 
   function toggleAggOptions() {
     const yVal = document.getElementById('exp-axis-y').value;
@@ -170,18 +246,19 @@ style>
     const aggType = document.getElementById('exp-agg').value;
     const chartType = document.getElementById('exp-chart-type').value;
 
-    if(!sheet || !xCol) return alert("Selecione a Fonte e o Eixo X.");
+    if(!sheet || !xCol) return alert("Selecione pelo menos a Fonte e o Eixo X.");
     
     const colsToFetch = [xCol];
     if(yCol) colsToFetch.push(yCol);
+    // Tenta pegar ID para drilldown
     const idC = explorerCols.find(c => c.toUpperCase().includes('PRONT') || c.toUpperCase().includes('ID'));
     if(idC && !colsToFetch.includes(idC)) colsToFetch.push(idC);
 
     const btn = document.getElementById('btn-gen-exp');
-    btn.innerHTML = "<span>🔄</span>"; btn.disabled = true;
+    btn.innerText = "🔄 Processando..."; btn.disabled = true;
 
     google.script.run.withSuccessHandler(res => {
-      btn.innerHTML = "<span>🚀</span> Plotar"; btn.disabled = false;
+      btn.innerText = "🚀 Plotar Gráfico"; btn.disabled = false;
       if(!res.sucesso) return alert(res.erro);
       
       currentExplorerData = { raw: res.dados, x: xCol, y: yCol, idCol: idC }; 
@@ -193,7 +270,15 @@ style>
     const grouped = {};
     data.forEach(row => {
       let xVal = row[xKey];
+      // Tratamento data
       if(xVal && typeof xVal === 'string' && xVal.match(/^\d{4}-\d{2}-\d{2}T/)) xVal = xVal.split('T')[0];
+      
+      // Arredondamento para Histogramas (se X for numérico e gráfico for barra/pizza)
+      if (typeof xVal === 'number' && (chartType === 'bar' || chartType === 'pie')) {
+         // Se for TFG ou Dose/Kg, arredonda para inteiros para agrupar melhor
+         if(xKey.includes('CALC') || xKey.toUpperCase().includes('DOSE')) xVal = Math.floor(xVal);
+      }
+
       const k = String(xVal);
       if(!grouped[k]) grouped[k] = [];
       let val = (yKey && row[yKey] !== undefined) ? row[yKey] : 1;
@@ -215,34 +300,57 @@ style>
       xFinal.push(k); yFinal.push(res);
     });
 
-    // Sort
     const pairs = xFinal.map((e,i) => ({x: e, y: yFinal[i]}));
+    // Sort numérico ou alfabético
     pairs.sort((a,b) => {
         const na = parseFloat(a.x), nb = parseFloat(b.x);
         if(!isNaN(na) && !isNaN(nb)) return na - nb;
         return a.x.localeCompare(b.x);
     });
 
+    const isVirtual = xKey.startsWith('CALC_');
+    // Cores diferentes para dados reais vs calculados
+    const color = isVirtual ? '#8b5cf6' : '#3b82f6'; 
+
     const trace = {
       x: pairs.map(p => p.x), y: pairs.map(p => p.y),
-      type: chartType === 'scatter' ? 'scatter' : (chartType === 'pie' ? 'pie' : 'bar'),
-      mode: chartType === 'line' || chartType === 'scatter' ? 'lines+markers' : undefined,
-      marker: { color: '#3b82f6' }, name: yKey || 'Registros'
+      type: chartType === 'scatter' ? 'scatter' : (chartType === 'pie' ? 'pie' : (chartType==='box'?'box':'bar')),
+      mode: 'markers', // Default para scatter
+      marker: { color: color, size: 8, opacity: 0.7 }, 
+      name: yKey || 'Contagem'
     };
+    
+    if(chartType === 'line') trace.mode = 'lines+markers';
     if(chartType === 'pie') { trace.labels = trace.x; trace.values = trace.y; delete trace.x; delete trace.y; }
 
+    // Boxplot precisa dos dados brutos, não agrupados. 
+    // Implementação simplificada: se for Box, usa dados brutos se possível
+    if(chartType === 'box') {
+       trace.x = data.map(d => d[xKey]);
+       trace.y = yKey ? data.map(d => d[yKey]) : null;
+       // Boxplot geralmente inverte: X=Categoria, Y=Valor numérico
+       // Se usuário escolheu X=TFG e Y=Dose, boxplot quer Y=Dose agrupado por X
+    }
+
+    const xLabel = document.querySelector(`#exp-axis-x option[value="${xKey}"]`).text;
+    const yLabel = yKey ? document.querySelector(`#exp-axis-y option[value="${yKey}"]`).text : 'Contagem';
+
     const layout = {
-      title: `<b>${yKey || 'Contagem'}</b> por <b>${xKey}</b>`,
-      xaxis: { title: xKey, automargin: true }, yaxis: { title: yKey || 'Valor' },
-      template: 'plotly_white', margin: { l: 50, r: 30, t: 50, b: 50 }
+      title: { text: `<b>${yLabel}</b> por <b>${xLabel}</b>`, font: {size: 18} },
+      xaxis: { title: xLabel, automargin: true, gridcolor: '#f1f5f9' }, 
+      yaxis: { title: yLabel, gridcolor: '#f1f5f9' },
+      template: 'plotly_white', 
+      margin: { l: 60, r: 30, t: 60, b: 80 },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)'
     };
 
-    Plotly.newPlot('chart-explorer', [trace], layout);
+    Plotly.newPlot('chart-explorer', [trace], layout, {responsive: true});
   }
 
   function exportExplorerToStack() {
     if(!currentExplorerData) return alert("Gere um gráfico primeiro.");
-    if(!currentExplorerData.idCol) return alert("Sem Prontuário identificado para cruzamento.");
+    if(!currentExplorerData.idCol) return alert("Sem Prontuário nos dados para cruzamento.");
     
     const exportData = currentExplorerData.raw.map(d => ({
       prontuario: d[currentExplorerData.idCol],
@@ -250,9 +358,13 @@ style>
       valY: currentExplorerData.y ? d[currentExplorerData.y] : 1
     }));
     
-    const key = currentExplorerData.y ? 'valY' : 'valX';
-    const label = currentExplorerData.y ? `${currentExplorerData.y} (Exp)` : `${currentExplorerData.x} (Exp)`;
+    const xLabel = document.querySelector(`#exp-axis-x option[value="${currentExplorerData.x}"]`).text;
+    const yLabel = currentExplorerData.y ? document.querySelector(`#exp-axis-y option[value="${currentExplorerData.y}"]`).text : 'Contagem';
 
-    window.addToStack('Explorador', label, exportData, key);
+    if(window.addToStack) {
+        window.addToStack('Explorador', `${yLabel} vs ${xLabel}`, exportData, 'valY');
+    } else {
+        alert("Stack global não encontrado.");
+    }
   }
 </script>
